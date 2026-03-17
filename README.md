@@ -29,9 +29,18 @@ npm install
 npm run build
 ```
 
-## 配置到 Claude Code
+## 配置到 AI 客户端
 
-编辑 `~/.claude.json`（或在 Claude Code 中运行 `/mcp` 命令），添加以下配置：
+本 MCP 服务兼容所有支持 [MCP 协议](https://modelcontextprotocol.io) 的 AI 客户端。以下是主流客户端的配置方式。
+
+> **通用说明：**
+> - 将 `/path/to/siyuan-mcp-server` 替换为你的实际项目路径
+> - 将 `your-siyuan-api-token-here` 替换为真实 Token（设置 → 关于 → API Token）
+> - 如需修改思源地址（非默认端口），在 `env` 中添加 `"SIYUAN_BASE_URL": "http://127.0.0.1:自定义端口"`
+
+### Claude Code
+
+编辑 `~/.claude.json`（或在 Claude Code 中运行 `/mcp add` 命令）：
 
 ```json
 {
@@ -47,12 +56,60 @@ npm run build
 }
 ```
 
-> 将 `/path/to/siyuan-mcp-server` 替换为实际路径，将 `your-siyuan-api-token-here` 替换为真实 Token。
+### Claude Desktop
 
-如需修改思源地址（非默认端口），添加：
+编辑 Claude Desktop 配置文件：
+- macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows：`%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
-"SIYUAN_BASE_URL": "http://127.0.0.1:自定义端口"
+{
+  "mcpServers": {
+    "siyuan": {
+      "command": "node",
+      "args": ["/path/to/siyuan-mcp-server/dist/index.js"],
+      "env": {
+        "SIYUAN_TOKEN": "your-siyuan-api-token-here"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+在项目根目录创建 `.cursor/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "siyuan": {
+      "command": "node",
+      "args": ["/path/to/siyuan-mcp-server/dist/index.js"],
+      "env": {
+        "SIYUAN_TOKEN": "your-siyuan-api-token-here"
+      }
+    }
+  }
+}
+```
+
+### Codex CLI
+
+编辑 `~/.codex/config.json`：
+
+```json
+{
+  "mcpServers": {
+    "siyuan": {
+      "command": "node",
+      "args": ["/path/to/siyuan-mcp-server/dist/index.js"],
+      "env": {
+        "SIYUAN_TOKEN": "your-siyuan-api-token-here"
+      }
+    }
+  }
+}
 ```
 
 ## 使用 MCP Inspector 测试
@@ -131,3 +188,10 @@ SELECT id, content, hpath FROM blocks WHERE tag LIKE '%标签名%' LIMIT 20
 |--------|------|------|
 | `SIYUAN_TOKEN` | ✅ | 思源 API Token |
 | `SIYUAN_BASE_URL` | ❌ | 思源地址，默认 `http://127.0.0.1:6806` |
+
+## 致谢
+
+本项目参考了思源笔记（SiYuan Note）官方 API 文档开发，感谢思源笔记团队提供的开放 API 接口。
+
+- 思源笔记官方仓库：[github.com/siyuan-note/siyuan](https://github.com/siyuan-note/siyuan)
+- 思源笔记 API 文档：[API.md](https://github.com/siyuan-note/siyuan/blob/master/API.md)
