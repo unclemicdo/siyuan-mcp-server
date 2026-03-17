@@ -7,6 +7,7 @@ import {
   siyuanPost,
   handleSiyuanError,
   removeDocumentById,
+  getDescendantDocumentsById,
 } from "../services/siyuan.js";
 import type { CreateDocData, ExportMdData } from "../types.js";
 
@@ -136,8 +137,9 @@ Returns: 操作成功则返回成功消息
 Args:
   - id (string): 文档块的 ID（14 位字母数字字符串）
   - notebook (string, 可选): 旧版兼容参数，现已不再需要
+  - force (boolean, 可选): 若文档包含子文档，需显式设为 true 才继续删除
 
-Returns: 操作成功则返回成功消息`,
+Returns: 操作成功则返回成功消息；若检测到子文档且未传 force=true，则返回警告并中止删除`,
       inputSchema: z
         .object({
           notebook: z
@@ -149,6 +151,10 @@ Returns: 操作成功则返回成功消息`,
             .string()
             .min(1, "文档 ID 不能为空")
             .describe("文档块 ID（14 位字母数字字符串）"),
+          force: z
+            .boolean()
+            .optional()
+            .describe("若文档包含子文档，需显式设为 true 才继续删除"),
         })
         .strict(),
       annotations: {
@@ -158,8 +164,33 @@ Returns: 操作成功则返回成功消息`,
         openWorldHint: false,
       },
     },
-    async ({ id }) => {
+    async ({ id, force }) => {
       try {
+        const descendants = await getDescendantDocumentsById(id);
+        if (descendants.length > 0 && !force) {
+          const preview = descendants
+            .slice(0, 5)
+            .map((doc) => `- ${doc.hpath ?? doc.id}`)
+            .join("\n");
+          const more =
+            descendants.length > 5
+              ? `\n- ... 另外还有 ${descendants.length - 5} 个子文档`
+              : "";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text:
+                  `Warning: Document ${id} has ${descendants.length} child document(s). ` +
+                  `Deleting it will also remove those descendants.\n\n` +
+                  `${preview}${more}\n\n` +
+                  `If you want to continue, call siyuan_remove_doc again with force=true.`,
+              },
+            ],
+          };
+        }
+
         await removeDocumentById(id);
         return {
           content: [

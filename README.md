@@ -77,7 +77,7 @@ SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 |--------|------|
 | `siyuan_create_doc` | 用 Markdown 内容创建新文档 |
 | `siyuan_rename_doc` | 重命名文档 |
-| `siyuan_remove_doc` | 按文档 ID 删除文档（不可逆，已按官方 removeDocByID 修正）|
+| `siyuan_remove_doc` | 按文档 ID 删除文档；若存在子文档则需 `force=true` 二次确认 |
 | `siyuan_move_doc` | 移动文档到其他目录或笔记本 |
 | `siyuan_export_markdown` | 导出文档为完整 Markdown 内容 |
 
@@ -88,7 +88,7 @@ SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 | `siyuan_prepend_block` | 在父块开头插入块 |
 | `siyuan_append_block` | 在父块末尾追加块 |
 | `siyuan_update_block` | 更新块内容 |
-| `siyuan_delete_block` | 删除块；若目标是文档根块则自动走文档删除 API |
+| `siyuan_delete_block` | 删除块；若目标是带子文档的文档根块则需 `force=true` 二次确认 |
 | `siyuan_get_block_kramdown` | 获取块的 Kramdown 内容 |
 | `siyuan_get_child_blocks` | 获取子块列表 |
 

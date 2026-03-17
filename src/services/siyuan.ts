@@ -51,6 +51,10 @@ function escapeSqlString(value: string): string {
   return value.replace(/'/g, "''");
 }
 
+function escapeSqlLike(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
 function normalizeBlockLookup(row: SqlRow): BlockLookup {
   return {
     id: String(row.id ?? ""),
@@ -79,6 +83,31 @@ export async function getBlockLookupById(
     return null;
   }
   return normalizeBlockLookup(rows[0]);
+}
+
+/**
+ * 获取某个文档下的直接/间接子文档。
+ */
+export async function getDescendantDocumentsById(
+  id: string
+): Promise<BlockLookup[]> {
+  const block = await getBlockLookupById(id);
+  if (!block) {
+    throw new Error(`Document ${id} not found.`);
+  }
+  if (block.type !== "d") {
+    return [];
+  }
+  if (!block.box || !block.hpath) {
+    return [];
+  }
+
+  const hpathPrefix = `${escapeSqlLike(block.hpath)}/%`;
+  const stmt = `SELECT id, box, path, hpath, type FROM blocks WHERE type = 'd' AND box = '${escapeSqlString(
+    block.box
+  )}' AND hpath LIKE '${escapeSqlString(hpathPrefix)}' ESCAPE '\\' ORDER BY hpath ASC`;
+  const rows = await siyuanPost<SqlRow[]>("/api/query/sql", { stmt });
+  return (rows ?? []).map(normalizeBlockLookup);
 }
 
 /**

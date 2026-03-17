@@ -1,7 +1,7 @@
 // 块级操作工具
 // 覆盖：插入、追加、更新、删除块，获取块内容和子块列表
 import { z } from "zod";
-import { siyuanPost, handleSiyuanError, removeBlockById, } from "../services/siyuan.js";
+import { siyuanPost, handleSiyuanError, removeBlockById, getBlockLookupById, getDescendantDocumentsById, } from "../services/siyuan.js";
 /** 块数据格式枚举 */
 const DataTypeSchema = z
     .enum(["markdown", "dom"])
@@ -212,11 +212,16 @@ Returns JSON: 同 siyuan_insert_block
 
 Args:
   - id (string): 要删除的块 ID（14 位字母数字字符串）
+  - force (boolean, 可选): 若该块是包含子文档的文档根块，需显式设为 true 才继续删除
 
-Returns: 操作成功则返回成功消息`,
+Returns: 操作成功则返回成功消息；若检测到文档根块包含子文档且未传 force=true，则返回警告并中止删除`,
         inputSchema: z
             .object({
             id: z.string().min(1, "块 ID 不能为空").describe("要删除的块 ID"),
+            force: z
+                .boolean()
+                .optional()
+                .describe("若该块是包含子文档的文档根块，需显式设为 true 才继续删除"),
         })
             .strict(),
         annotations: {
@@ -225,8 +230,35 @@ Returns: 操作成功则返回成功消息`,
             idempotentHint: false,
             openWorldHint: false,
         },
-    }, async ({ id }) => {
+    }, async ({ id, force }) => {
         try {
+            const block = await getBlockLookupById(id);
+            if (!block) {
+                throw new Error(`Block ${id} not found.`);
+            }
+            if (block.type === "d") {
+                const descendants = await getDescendantDocumentsById(id);
+                if (descendants.length > 0 && !force) {
+                    const preview = descendants
+                        .slice(0, 5)
+                        .map((doc) => `- ${doc.hpath ?? doc.id}`)
+                        .join("\n");
+                    const more = descendants.length > 5
+                        ? `\n- ... 另外还有 ${descendants.length - 5} 个子文档`
+                        : "";
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `Warning: Block ${id} is a document root and has ${descendants.length} child document(s). ` +
+                                    `Deleting it will also remove those descendants.\n\n` +
+                                    `${preview}${more}\n\n` +
+                                    `If you want to continue, call siyuan_delete_block again with force=true.`,
+                            },
+                        ],
+                    };
+                }
+            }
             await removeBlockById(id);
             return {
                 content: [

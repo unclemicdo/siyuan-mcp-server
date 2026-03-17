@@ -11,6 +11,10 @@ export declare function siyuanPost<T>(endpoint: string, body?: Record<string, un
  */
 export declare function getBlockLookupById(id: string): Promise<BlockLookup | null>;
 /**
+ * 获取某个文档下的直接/间接子文档。
+ */
+export declare function getDescendantDocumentsById(id: string): Promise<BlockLookup[]>;
+/**
  * 轮询确认某个块已从 blocks 表中消失。
  */
 export declare function ensureBlockRemoved(id: string, label?: string, attempts?: number): Promise<void>;
