@@ -42,7 +42,14 @@ npm run build
 
 ### Claude Code
 
-编辑 `~/.claude.json`（或在 Claude Code 中运行 `/mcp add` 命令）：
+你可以直接在 Claude Code 终端运行以下命令进行一键安装：
+
+```bash
+/mcp add siyuan node /path/to/siyuan-mcp-server/dist/index.js
+```
+*(注意：运行后如果提示缺少 `SIYUAN_TOKEN` 环境变量，请按提示输入即可。)*
+
+或者手动编辑 `~/.claude.json`：
 
 ```json
 {
@@ -98,7 +105,13 @@ npm run build
 
 ### Codex CLI
 
-编辑 `~/.codex/config.json`：
+你可以直接在终端中远行以下命令进行一键安装：
+
+```bash
+codex mcp add siyuan --env SIYUAN_TOKEN=your-siyuan-api-token-here -- node /path/to/siyuan-mcp-server/dist/index.js
+```
+
+或者手动编辑 `~/.codex/config.json`（或 `~/.codex/config.toml`）：
 
 ```json
 {

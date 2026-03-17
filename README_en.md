@@ -42,7 +42,14 @@ This MCP server is compatible with any AI client that supports the [MCP Protocol
 
 ### Claude Code
 
-Edit `~/.claude.json` (or just run `/mcp add` in Claude Code):
+You can install it directly in the Claude Code terminal using:
+
+```bash
+/mcp add siyuan node /path/to/siyuan-mcp-server/dist/index.js
+```
+*(Note: If prompted for the `SIYUAN_TOKEN` environment variable, just follow the terminal prompts.)*
+
+Alternatively, edit `~/.claude.json` manually:
 
 ```json
 {
@@ -98,7 +105,13 @@ Create a `.cursor/mcp.json` file in your project root:
 
 ### Codex CLI
 
-Edit `~/.codex/config.json`:
+You can install it directly from your terminal using:
+
+```bash
+codex mcp add siyuan --env SIYUAN_TOKEN=your-siyuan-api-token-here -- node /path/to/siyuan-mcp-server/dist/index.js
+```
+
+Alternatively, manually edit `~/.codex/config.json` (or `~/.codex/config.toml`):
 
 ```json
 {
