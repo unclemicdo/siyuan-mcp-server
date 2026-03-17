@@ -4,7 +4,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { siyuanPost, handleSiyuanError } from "../services/siyuan.js";
-import type { VersionData, PushMsgData } from "../types.js";
+import type { PushMsgData } from "../types.js";
 
 export function registerSystemTools(server: McpServer): void {
   // ─── 获取版本信息 ────────────────────────────────────────────────
@@ -16,7 +16,7 @@ export function registerSystemTools(server: McpServer): void {
 
 Returns JSON:
 {
-  "ver": string  // 版本号，如 "2.12.4"
+  "version": string  // 版本号，如 "3.6.0"
 }
 
 可用于验证思源是否正常运行，以及检查 API 兼容性。`,
@@ -30,9 +30,9 @@ Returns JSON:
     },
     async () => {
       try {
-        const data = await siyuanPost<VersionData>("/api/system/version");
+        const version = await siyuanPost<string>("/api/system/version");
         return {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+          content: [{ type: "text", text: JSON.stringify({ version }, null, 2) }],
         };
       } catch (error) {
         return { content: [{ type: "text", text: handleSiyuanError(error) }] };

@@ -1,5 +1,7 @@
 # siyuan-mcp-server
 
+[English](./README_en.md) | [中文](./README.md)
+
 思源笔记（SiYuan Note）的本地 MCP 服务，让 AI 助手（Claude Code 等）能通过 MCP 协议直接操作思源笔记的数据。
 
 ## 功能概览

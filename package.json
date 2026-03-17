@@ -2,13 +2,27 @@
   "name": "siyuan-mcp-server",
   "version": "1.0.0",
   "description": "MCP server for SiYuan Note (思源笔记) API integration",
+  "license": "MIT",
+  "author": "Uncle Mic",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unclemicdo/siyuan-mcp-server"
+  },
+  "keywords": [
+    "siyuan",
+    "mcp",
+    "note-taking",
+    "思源笔记",
+    "ai",
+    "model-context-protocol"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "engines": {
     "node": ">=18"
