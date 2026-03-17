@@ -67,7 +67,7 @@ export async function getBlockLookupById(id) {
 /**
  * 获取某个文档下的直接/间接子文档。
  */
-export async function getDescendantDocumentsById(id) {
+export async function getDescendantDocumentsById(id, attempts = 5) {
     const block = await getBlockLookupById(id);
     if (!block) {
         throw new Error(`Document ${id} not found.`);
@@ -75,13 +75,20 @@ export async function getDescendantDocumentsById(id) {
     if (block.type !== "d") {
         return [];
     }
-    if (!block.box || !block.hpath) {
+    if (!block.box || !block.path) {
         return [];
     }
-    const hpathPrefix = `${escapeSqlLike(block.hpath)}/%`;
-    const stmt = `SELECT id, box, path, hpath, type FROM blocks WHERE type = 'd' AND box = '${escapeSqlString(block.box)}' AND hpath LIKE '${escapeSqlString(hpathPrefix)}' ESCAPE '\\' ORDER BY hpath ASC`;
-    const rows = await siyuanPost("/api/query/sql", { stmt });
-    return (rows ?? []).map(normalizeBlockLookup);
+    const pathPrefix = block.path.replace(/\.sy$/, "");
+    const stmt = `SELECT id, box, path, hpath, type FROM blocks WHERE type = 'd' AND box = '${escapeSqlString(block.box)}' AND path LIKE '${escapeSqlString(pathPrefix)}/%' ORDER BY hpath ASC`;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+        const rows = await siyuanPost("/api/query/sql", { stmt });
+        const docs = (rows ?? []).map(normalizeBlockLookup);
+        if (docs.length > 0 || attempt === attempts - 1) {
+            return docs;
+        }
+        await sleep(100 * (attempt + 1));
+    }
+    return [];
 }
 /**
  * 轮询确认某个块已从 blocks 表中消失。

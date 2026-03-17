@@ -13,7 +13,7 @@ export declare function getBlockLookupById(id: string): Promise<BlockLookup | nu
 /**
  * 获取某个文档下的直接/间接子文档。
  */
-export declare function getDescendantDocumentsById(id: string): Promise<BlockLookup[]>;
+export declare function getDescendantDocumentsById(id: string, attempts?: number): Promise<BlockLookup[]>;
 /**
  * 轮询确认某个块已从 blocks 表中消失。
  */

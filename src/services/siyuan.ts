@@ -89,7 +89,8 @@ export async function getBlockLookupById(
  * 获取某个文档下的直接/间接子文档。
  */
 export async function getDescendantDocumentsById(
-  id: string
+  id: string,
+  attempts = 5
 ): Promise<BlockLookup[]> {
   const block = await getBlockLookupById(id);
   if (!block) {
@@ -98,16 +99,25 @@ export async function getDescendantDocumentsById(
   if (block.type !== "d") {
     return [];
   }
-  if (!block.box || !block.hpath) {
+  if (!block.box || !block.path) {
     return [];
   }
 
-  const hpathPrefix = `${escapeSqlLike(block.hpath)}/%`;
+  const pathPrefix = block.path.replace(/\.sy$/, "");
   const stmt = `SELECT id, box, path, hpath, type FROM blocks WHERE type = 'd' AND box = '${escapeSqlString(
     block.box
-  )}' AND hpath LIKE '${escapeSqlString(hpathPrefix)}' ESCAPE '\\' ORDER BY hpath ASC`;
-  const rows = await siyuanPost<SqlRow[]>("/api/query/sql", { stmt });
-  return (rows ?? []).map(normalizeBlockLookup);
+  )}' AND path LIKE '${escapeSqlString(pathPrefix)}/%' ORDER BY hpath ASC`;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const rows = await siyuanPost<SqlRow[]>("/api/query/sql", { stmt });
+    const docs = (rows ?? []).map(normalizeBlockLookup);
+    if (docs.length > 0 || attempt === attempts - 1) {
+      return docs;
+    }
+    await sleep(100 * (attempt + 1));
+  }
+
+  return [];
 }
 
 /**
