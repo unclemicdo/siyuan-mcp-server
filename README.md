@@ -2,54 +2,63 @@
 
 [English](./README_en.md) | [中文](./README.md)
 
-思源笔记（SiYuan Note）的本地 MCP 服务，让 AI 助手（Claude Code 等）能通过 MCP 协议直接操作思源笔记的数据。
+`siyuan-mcp-server` 是一个本地 `stdio` MCP Server，让支持 MCP 的 AI 客户端可以直接读取、检索和修改你的思源笔记数据。它适合把思源当作个人知识库、项目档案库或写作仓库来配合 Claude Code、Cursor、Codex CLI 等本地 Agent 使用。
 
-## 功能概览
+## 为什么有用
 
-提供 **22 个 MCP 工具**，覆盖思源笔记的核心操作：
+常见工作流包括：
 
-| 分类 | 工具数量 | 主要功能 |
-|------|---------|---------|
-| 笔记本管理 | 5 | 列出、创建、打开、关闭、重命名笔记本 |
-| 文档操作 | 5 | 创建、重命名、删除、移动文档，导出 Markdown |
-| 块级操作 | 7 | 插入、追加、更新、删除块，读取块内容和子块 |
-| 块属性 | 2 | 获取和设置自定义 key-value 元数据 |
-| SQL 查询 | 1 | 执行 SQL 查询思源数据库，支持全文搜索 |
-| 系统通知 | 2 | 获取版本信息，向思源 UI 推送通知 |
+- 找到最近更新的日报、会议纪要或项目文档，再追加一段总结
+- 导出整篇 Markdown，交给 AI 做摘要、改写或结构整理
+- 用 SQL 在 `blocks` 表中按标题、标签、更新时间快速定位目标文档
+- 给指定块补充 `custom-*` 属性，配合自己的任务流或元数据规范
+- 批量整理笔记本、文档和块，而不是在 GUI 里逐个点开处理
+
+## 安全与隐私
+
+这个 MCP Server 是高权限本地集成。配置好后，客户端会以你的思源 API Token 直接调用思源接口。
+
+- 它默认连接 `http://127.0.0.1:6806`
+- 如果你把 `SIYUAN_BASE_URL` 改成非本地地址，Token 和笔记内容会被发送到那个目标
+- 如果非本地地址不是 HTTPS，传输中的 Token 和内容可能暴露
+- 删除、移动、覆盖更新都属于真实写操作；请把它视为“可直接修改你的知识库”
+- `siyuan_sql_query` 现在只允许单条只读 `SELECT` 查询，不允许 `UPDATE`、`DELETE`、`PRAGMA` 或多语句 payload
+
+从本版本开始，Server 在启动时会对非本地或非 HTTPS 的 `SIYUAN_BASE_URL` 输出警告。
+
+## 适用范围
+
+这个项目当前的交付形态是本地 `stdio` MCP Server。
+
+- 适合：能够启动本地 MCP 进程的客户端
+- 不适合：把它当作带鉴权、多租户、远程托管的 MCP 网关
 
 ## 前置条件
 
-- Node.js ≥ 18
-- 思源笔记正在本地运行（默认端口 `6806`）
-- 思源 API Token（设置 → 关于 → API Token）
+- Node.js 18 或更高版本
+- 本地运行中的思源笔记实例
+- 一个有效的思源 API Token
 
-## 安装
+你可以在思源笔记里通过 `设置 -> 关于 -> API Token` 获取 Token。
+
+## 本地安装
 
 ```bash
-cd siyuan-mcp-server
 npm install
 npm run build
 ```
 
-## 配置到 AI 客户端
+本仓库默认使用本地构建产物 `dist/index.js` 作为稳定启动路径。
 
-本 MCP 服务兼容所有支持 [MCP 协议](https://modelcontextprotocol.io) 的 AI 客户端。以下是主流客户端的配置方式。
+## 配置到客户端
 
-> **通用说明：**
-> - 将 `/path/to/siyuan-mcp-server` 替换为你的实际项目路径
-> - 将 `your-siyuan-api-token-here` 替换为真实 Token（设置 → 关于 → API Token）
-> - 如需修改思源地址（非默认端口），在 `env` 中添加 `"SIYUAN_BASE_URL": "http://127.0.0.1:自定义端口"`
+下面的示例都假设你已经执行过 `npm install` 和 `npm run build`，并且把 `/path/to/siyuan-mcp-server` 替换成实际绝对路径。
 
 ### Claude Code
 
-你可以直接在 Claude Code 终端运行以下命令进行一键安装：
+推荐先手动确认配置，再视需要使用命令行添加。
 
-```bash
-/mcp add siyuan node /path/to/siyuan-mcp-server/dist/index.js
-```
-*(注意：运行后如果提示缺少 `SIYUAN_TOKEN` 环境变量，请按提示输入即可。)*
-
-或者手动编辑 `~/.claude.json`：
+手动配置 `~/.claude.json`：
 
 ```json
 {
@@ -65,11 +74,18 @@ npm run build
 }
 ```
 
+命令行添加：
+
+```bash
+/mcp add siyuan node /path/to/siyuan-mcp-server/dist/index.js
+```
+
 ### Claude Desktop
 
-编辑 Claude Desktop 配置文件：
-- macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows：`%APPDATA%\Claude\claude_desktop_config.json`
+编辑配置文件：
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`
 
 ```json
 {
@@ -105,108 +121,122 @@ npm run build
 
 ### Codex CLI
 
-你可以直接在终端中远行以下命令进行一键安装：
+推荐直接使用命令行添加：
 
 ```bash
 codex mcp add siyuan --env SIYUAN_TOKEN=your-siyuan-api-token-here -- node /path/to/siyuan-mcp-server/dist/index.js
 ```
 
-或者手动编辑 `~/.codex/config.json`（或 `~/.codex/config.toml`）：
+如果你需要覆盖默认端口或地址，再额外传入 `SIYUAN_BASE_URL`。
 
-```json
-{
-  "mcpServers": {
-    "siyuan": {
-      "command": "node",
-      "args": ["/path/to/siyuan-mcp-server/dist/index.js"],
-      "env": {
-        "SIYUAN_TOKEN": "your-siyuan-api-token-here"
-      }
-    }
-  }
-}
+例如：
+
+```bash
+codex mcp add siyuan \
+  --env SIYUAN_TOKEN=your-siyuan-api-token-here \
+  --env SIYUAN_BASE_URL=http://127.0.0.1:6807 \
+  -- node /path/to/siyuan-mcp-server/dist/index.js
 ```
 
-## 使用 MCP Inspector 测试
+## 环境变量
+
+| 变量名 | 必填 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `SIYUAN_TOKEN` | 是 | 无 | 思源 API Token |
+| `SIYUAN_BASE_URL` | 否 | `http://127.0.0.1:6806` | 思源实例地址；非本地地址会触发启动警告 |
+
+## 真实使用场景
+
+下面这些都是适合直接交给 Agent 的任务：
+
+- “找到最近更新的周报，导出 Markdown 并总结三条风险。”
+- “搜索标题里包含 MCP 的文档，给最新一篇末尾追加发布检查清单。”
+- “按标签找出所有 `#待整理` 文档，列出路径和最后更新时间。”
+- “给这个块设置 `custom-status=done`，并显示当前所有自定义属性。”
+- “把某篇归档文档移动到另一个父文档下，保留结构不变。”
+
+## 工具概览
+
+当前共提供 22 个工具：
+
+| 分类 | 工具数量 | 说明 |
+| --- | --- | --- |
+| 笔记本管理 | 5 | 列出、创建、打开、关闭、重命名笔记本 |
+| 文档操作 | 5 | 创建、重命名、删除、移动、导出 Markdown |
+| 块级操作 | 7 | 插入、追加、更新、删除块，读取块和子块 |
+| 块属性 | 2 | 读取和设置块属性 |
+| SQL 查询 | 1 | 只读 `SELECT` 查询 |
+| 系统工具 | 2 | 获取版本信息、推送通知 |
+
+更详细的工具说明可直接查看 `src/tools/*.ts` 中的工具描述。
+
+## SQL 查询示例
+
+`siyuan_sql_query` 只接受单条只读 `SELECT`。建议始终加上 `WHERE`、`ORDER BY`、`LIMIT`，避免返回过大的结果集。
+
+```sql
+SELECT id, content, type, hpath
+FROM blocks
+WHERE content LIKE '%关键词%'
+ORDER BY updated DESC
+LIMIT 20;
+```
+
+```sql
+SELECT id, hpath, updated
+FROM blocks
+WHERE type = 'd' AND tag LIKE '%项目%'
+ORDER BY updated DESC
+LIMIT 10;
+```
+
+## 故障排查
+
+### `SIYUAN_TOKEN` 未设置
+
+服务启动会直接报错。请把 Token 配到客户端的 MCP 环境变量里。
+
+### 无法连接思源
+
+请先检查：
+
+- 思源是否正在运行
+- `SIYUAN_BASE_URL` 是否写对
+- 目标实例到底是本地还是远程
+
+如果你看到 non-local warning，说明当前配置会把 Token 发到本机以外的地址。
+
+### 401 Unauthorized
+
+通常表示 Token 不正确，或者 Token 对应的是另一个思源实例。请确认 Token 来源和 `SIYUAN_BASE_URL` 指向的是同一台思源。
+
+### SQL 结果被截断
+
+`siyuan_sql_query` 的返回文本超过限制时会自动截断。请缩小查询范围，例如增加 `LIMIT`、`WHERE` 或选择更少字段。
+
+## 已知限制
+
+- 当前只支持本地启动的 `stdio` Server，不提供远程托管模式
+- 没有额外权限系统；权限边界完全继承思源 API Token
+- SQL 工具只支持只读 `SELECT`
+- 大结果集会被截断，避免把过量文本直接灌进客户端
+
+## 本地验证
+
+```bash
+npm run build
+npm test
+```
+
+如果要在本地交互式检查协议行为，可以再运行：
 
 ```bash
 SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
-## 工具列表
-
-### 笔记本管理
-| 工具名 | 说明 |
-|--------|------|
-| `siyuan_list_notebooks` | 列出所有笔记本（含 ID、名称、状态）|
-| `siyuan_create_notebook` | 创建新笔记本 |
-| `siyuan_open_notebook` | 打开/激活已关闭的笔记本 |
-| `siyuan_close_notebook` | 关闭笔记本（不删除内容）|
-| `siyuan_rename_notebook` | 重命名笔记本 |
-
-### 文档操作
-| 工具名 | 说明 |
-|--------|------|
-| `siyuan_create_doc` | 用 Markdown 内容创建新文档 |
-| `siyuan_rename_doc` | 重命名文档 |
-| `siyuan_remove_doc` | 按文档 ID 删除文档；若存在子文档则需 `force=true` 二次确认 |
-| `siyuan_move_doc` | 移动文档到其他目录或笔记本 |
-| `siyuan_export_markdown` | 导出文档为完整 Markdown 内容 |
-
-### 块级操作
-| 工具名 | 说明 |
-|--------|------|
-| `siyuan_insert_block` | 在指定位置插入块 |
-| `siyuan_prepend_block` | 在父块开头插入块 |
-| `siyuan_append_block` | 在父块末尾追加块 |
-| `siyuan_update_block` | 更新块内容 |
-| `siyuan_delete_block` | 删除块；若目标是带子文档的文档根块则需 `force=true` 二次确认 |
-| `siyuan_get_block_kramdown` | 获取块的 Kramdown 内容 |
-| `siyuan_get_child_blocks` | 获取子块列表 |
-
-### 块属性
-| 工具名 | 说明 |
-|--------|------|
-| `siyuan_get_block_attrs` | 获取块的自定义属性 |
-| `siyuan_set_block_attrs` | 设置块的自定义属性 |
-
-### SQL 查询
-| 工具名 | 说明 |
-|--------|------|
-| `siyuan_sql_query` | 执行 SQL 查询思源数据库 |
-
-### 系统通知
-| 工具名 | 说明 |
-|--------|------|
-| `siyuan_get_version` | 获取思源版本信息 |
-| `siyuan_push_notification` | 向思源 UI 推送通知弹窗 |
-
-## SQL 查询示例
-
-```sql
--- 搜索包含关键词的块
-SELECT id, content, type, hpath FROM blocks WHERE content LIKE '%关键词%' LIMIT 20
-
--- 列出某笔记本的所有文档
-SELECT id, hpath, created, updated FROM blocks WHERE type='d' AND box='笔记本ID' ORDER BY updated DESC
-
--- 查找最近修改的文档
-SELECT id, hpath, updated FROM blocks WHERE type='d' ORDER BY updated DESC LIMIT 10
-
--- 按标签搜索
-SELECT id, content, hpath FROM blocks WHERE tag LIKE '%标签名%' LIMIT 20
-```
-
-## 环境变量
-
-| 变量名 | 必填 | 说明 |
-|--------|------|------|
-| `SIYUAN_TOKEN` | ✅ | 思源 API Token |
-| `SIYUAN_BASE_URL` | ❌ | 思源地址，默认 `http://127.0.0.1:6806` |
-
 ## 致谢
 
-本项目参考了思源笔记（SiYuan Note）官方 API 文档开发，感谢思源笔记团队提供的开放 API 接口。
+本项目参考思源笔记官方 API 文档实现。
 
-- 思源笔记官方仓库：[github.com/siyuan-note/siyuan](https://github.com/siyuan-note/siyuan)
-- 思源笔记 API 文档：[API.md](https://github.com/siyuan-note/siyuan/blob/master/API.md)
+- SiYuan 官方仓库：[github.com/siyuan-note/siyuan](https://github.com/siyuan-note/siyuan)
+- SiYuan API 文档：[API.md](https://github.com/siyuan-note/siyuan/blob/master/API.md)

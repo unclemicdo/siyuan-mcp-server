@@ -1,4 +1,17 @@
-import type { BlockLookup } from "../types.js";
+import type { BlockLookup, SqlRow } from "../types.js";
+export type SiyuanEndpointRiskLevel = "invalid" | "local" | "private-network" | "remote-secure" | "remote-insecure";
+export interface SiyuanEndpointRisk {
+    baseUrl: string;
+    normalizedUrl: string | null;
+    host: string | null;
+    protocol: string | null;
+    level: SiyuanEndpointRiskLevel;
+    isLocal: boolean;
+    isRemote: boolean;
+    isHttps: boolean;
+}
+export declare function getSiyuanEndpointRisk(baseUrl: string): SiyuanEndpointRisk;
+export declare function getSiyuanStartupWarnings(baseUrl: string): string[];
 /**
  * 向思源 API 发送 POST 请求
  * @param endpoint - API 路径，如 "/api/notebook/lsNotebooks"
@@ -6,6 +19,7 @@ import type { BlockLookup } from "../types.js";
  * @returns 响应的 data 字段
  */
 export declare function siyuanPost<T>(endpoint: string, body?: Record<string, unknown>): Promise<T>;
+export declare function siyuanSqlQuery(stmt: string): Promise<SqlRow[]>;
 /**
  * 根据块 ID 读取基础元数据。
  */

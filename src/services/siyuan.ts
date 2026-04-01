@@ -2,8 +2,180 @@
 // 所有工具通过此模块发起请求，统一处理认证和错误
 
 import axios, { AxiosError } from "axios";
+import { isIP } from "node:net";
 import { SIYUAN_BASE_URL } from "../constants.js";
 import type { BlockLookup, SiYuanResponse, SqlRow } from "../types.js";
+import { assertReadOnlySelectStatement } from "./sql-safety.js";
+
+export type SiyuanEndpointRiskLevel =
+  | "invalid"
+  | "local"
+  | "private-network"
+  | "remote-secure"
+  | "remote-insecure";
+
+export interface SiyuanEndpointRisk {
+  baseUrl: string;
+  normalizedUrl: string | null;
+  host: string | null;
+  protocol: string | null;
+  level: SiyuanEndpointRiskLevel;
+  isLocal: boolean;
+  isRemote: boolean;
+  isHttps: boolean;
+}
+
+function isLoopbackHost(host: string): boolean {
+  const normalizedHost = host.toLowerCase();
+  if (normalizedHost === "localhost" || normalizedHost === "::1") {
+    return true;
+  }
+
+  if (normalizedHost.startsWith("127.")) {
+    return true;
+  }
+
+  return false;
+}
+
+function isPrivateIpv4(host: string): boolean {
+  const parts = host.split(".").map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part))) {
+    return false;
+  }
+
+  if (parts[0] === 10) {
+    return true;
+  }
+
+  if (parts[0] === 192 && parts[1] === 168) {
+    return true;
+  }
+
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) {
+    return true;
+  }
+
+  return false;
+}
+
+function isPrivateIpv6(host: string): boolean {
+  const normalizedHost = host.toLowerCase();
+  return normalizedHost.startsWith("fc") || normalizedHost.startsWith("fd");
+}
+
+function isPrivateNetworkHost(host: string): boolean {
+  if (isLoopbackHost(host)) {
+    return false;
+  }
+
+  const ipVersion = isIP(host);
+  if (ipVersion === 4) {
+    return isPrivateIpv4(host);
+  }
+
+  if (ipVersion === 6) {
+    return isPrivateIpv6(host);
+  }
+
+  return false;
+}
+
+export function getSiyuanEndpointRisk(baseUrl: string): SiyuanEndpointRisk {
+  try {
+    const url = new URL(baseUrl);
+    const protocol = url.protocol.toLowerCase();
+    const host = url.hostname;
+    const isHttps = protocol === "https:";
+
+    if (protocol !== "http:" && protocol !== "https:") {
+      return {
+        baseUrl,
+        normalizedUrl: url.toString(),
+        host,
+        protocol,
+        level: "invalid",
+        isLocal: false,
+        isRemote: true,
+        isHttps: false,
+      };
+    }
+
+    if (isLoopbackHost(host)) {
+      return {
+        baseUrl,
+        normalizedUrl: url.toString(),
+        host,
+        protocol,
+        level: "local",
+        isLocal: true,
+        isRemote: false,
+        isHttps,
+      };
+    }
+
+    if (isPrivateNetworkHost(host)) {
+      return {
+        baseUrl,
+        normalizedUrl: url.toString(),
+        host,
+        protocol,
+        level: "private-network",
+        isLocal: false,
+        isRemote: true,
+        isHttps,
+      };
+    }
+
+    return {
+      baseUrl,
+      normalizedUrl: url.toString(),
+      host,
+      protocol,
+      level: isHttps ? "remote-secure" : "remote-insecure",
+      isLocal: false,
+      isRemote: true,
+      isHttps,
+    };
+  } catch {
+    return {
+      baseUrl,
+      normalizedUrl: null,
+      host: null,
+      protocol: null,
+      level: "invalid",
+      isLocal: false,
+      isRemote: true,
+      isHttps: false,
+    };
+  }
+}
+
+export function getSiyuanStartupWarnings(baseUrl: string): string[] {
+  const risk = getSiyuanEndpointRisk(baseUrl);
+
+  if (risk.level === "local") {
+    return [];
+  }
+
+  if (risk.level === "invalid") {
+    return [
+      `[siyuan-mcp-server] WARNING: SIYUAN_BASE_URL is not a valid http(s) URL: ${baseUrl}`,
+    ];
+  }
+
+  const warnings = [
+    `[siyuan-mcp-server] WARNING: SIYUAN_BASE_URL points to a non-local address (${baseUrl}). Your SiYuan API token will be sent to that target.`,
+  ];
+
+  if (!risk.isHttps) {
+    warnings.push(
+      `[siyuan-mcp-server] WARNING: The configured non-local address is not using HTTPS. Your token and note content could be exposed in transit.`
+    );
+  }
+
+  return warnings;
+}
 
 /**
  * 获取思源 API Token（来自环境变量）
@@ -47,6 +219,12 @@ export async function siyuanPost<T>(
   return data;
 }
 
+export async function siyuanSqlQuery(stmt: string): Promise<SqlRow[]> {
+  const validatedStmt = assertReadOnlySelectStatement(stmt);
+  const rows = await siyuanPost<SqlRow[]>("/api/query/sql", { stmt: validatedStmt });
+  return rows ?? [];
+}
+
 function escapeSqlString(value: string): string {
   return value.replace(/'/g, "''");
 }
@@ -78,7 +256,7 @@ export async function getBlockLookupById(
   const stmt = `SELECT id, box, path, hpath, type FROM blocks WHERE id = '${escapeSqlString(
     id
   )}' LIMIT 1`;
-  const rows = await siyuanPost<SqlRow[]>("/api/query/sql", { stmt });
+  const rows = await siyuanSqlQuery(stmt);
   if (!rows?.length) {
     return null;
   }
@@ -109,7 +287,7 @@ export async function getDescendantDocumentsById(
   )}' AND path LIKE '${escapeSqlString(pathPrefix)}/%' ORDER BY hpath ASC`;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const rows = await siyuanPost<SqlRow[]>("/api/query/sql", { stmt });
+    const rows = await siyuanSqlQuery(stmt);
     const docs = (rows ?? []).map(normalizeBlockLookup);
     if (docs.length > 0 || attempt === attempts - 1) {
       return docs;
@@ -182,11 +360,17 @@ export async function removeBlockById(id: string): Promise<void> {
  * 统一错误处理，返回用户友好的错误信息
  */
 export function handleSiyuanError(error: unknown): string {
+  const risk = getSiyuanEndpointRisk(SIYUAN_BASE_URL);
+  const targetLabel = risk.isLocal ? "local" : "remote";
+
   if (error instanceof AxiosError) {
     if (error.response) {
       const status = error.response.status;
       if (status === 401)
-        return "Error: Unauthorized. Please check your SIYUAN_TOKEN.";
+        return (
+          "Error: Unauthorized. Please check SIYUAN_TOKEN and make sure it belongs " +
+          `to the SiYuan instance configured by SIYUAN_BASE_URL (${SIYUAN_BASE_URL}).`
+        );
       if (status === 403)
         return "Error: Forbidden. You don't have permission to perform this action.";
       if (status === 404)
@@ -195,10 +379,16 @@ export function handleSiyuanError(error: unknown): string {
         return "Error: Rate limit exceeded. Please wait before making more requests.";
       return `Error: HTTP ${status} from SiYuan API.`;
     }
-    if (error.code === "ECONNREFUSED") {
+    if (error.code === "ECONNREFUSED" || error.code === "ECONNRESET") {
       return (
         "Error: Cannot connect to SiYuan. " +
-        `Please make sure SiYuan is running at ${SIYUAN_BASE_URL}.`
+        `Please make sure the ${targetLabel} target at ${SIYUAN_BASE_URL} is reachable and that SIYUAN_BASE_URL is correct.`
+      );
+    }
+    if (error.code === "ENOTFOUND" || error.code === "EAI_AGAIN") {
+      return (
+        `Error: Cannot resolve the SiYuan host in SIYUAN_BASE_URL (${SIYUAN_BASE_URL}). ` +
+        "Please check the configured hostname."
       );
     }
     if (error.code === "ECONNABORTED") {

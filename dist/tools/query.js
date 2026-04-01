@@ -1,7 +1,7 @@
 // SQL 查询工具
 // 覆盖：执行 SQL 查询思源数据库，支持全文搜索和复杂过滤
 import { z } from "zod";
-import { siyuanPost, handleSiyuanError } from "../services/siyuan.js";
+import { handleSiyuanError, siyuanSqlQuery } from "../services/siyuan.js";
 import { CHARACTER_LIMIT } from "../constants.js";
 export function registerQueryTools(server) {
     server.registerTool("siyuan_sql_query", {
@@ -50,8 +50,7 @@ Returns JSON: 查询结果数组，每行为一个对象
         },
     }, async ({ stmt }) => {
         try {
-            const rows = await siyuanPost("/api/query/sql", { stmt });
-            const result = rows ?? [];
+            const result = await siyuanSqlQuery(stmt);
             let text = JSON.stringify(result, null, 2);
             if (text.length > CHARACTER_LIMIT) {
                 // 截断至约一半条目

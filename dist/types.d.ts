@@ -67,7 +67,7 @@ export interface BlockLookup {
 }
 /** 系统版本响应 */
 export interface VersionData {
-    ver: string;
+    version: string;
 }
 /** 导出 Markdown 响应 */
 export interface ExportMdData {

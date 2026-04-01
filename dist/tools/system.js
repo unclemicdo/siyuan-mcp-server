@@ -10,7 +10,7 @@ export function registerSystemTools(server) {
 
 Returns JSON:
 {
-  "ver": string  // 版本号，如 "2.12.4"
+  "version": string  // 版本号，如 "3.6.0"
 }
 
 可用于验证思源是否正常运行，以及检查 API 兼容性。`,
@@ -23,9 +23,9 @@ Returns JSON:
         },
     }, async () => {
         try {
-            const data = await siyuanPost("/api/system/version");
+            const version = await siyuanPost("/api/system/version");
             return {
-                content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+                content: [{ type: "text", text: JSON.stringify({ version }, null, 2) }],
             };
         }
         catch (error) {

@@ -3,9 +3,8 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { siyuanPost, handleSiyuanError } from "../services/siyuan.js";
+import { handleSiyuanError, siyuanSqlQuery } from "../services/siyuan.js";
 import { CHARACTER_LIMIT } from "../constants.js";
-import type { SqlRow } from "../types.js";
 
 export function registerQueryTools(server: McpServer): void {
   server.registerTool(
@@ -59,8 +58,7 @@ Returns JSON: 查询结果数组，每行为一个对象
     },
     async ({ stmt }) => {
       try {
-        const rows = await siyuanPost<SqlRow[]>("/api/query/sql", { stmt });
-        const result = rows ?? [];
+        const result = await siyuanSqlQuery(stmt);
 
         let text = JSON.stringify(result, null, 2);
 

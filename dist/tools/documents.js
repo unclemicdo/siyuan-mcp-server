@@ -14,10 +14,7 @@ Args:
     如 "/日记/2024-01-15" 或 "/项目/需求文档"
   - markdown (string): 文档的 Markdown 内容（可以为空字符串创建空文档）
 
-Returns JSON:
-{
-  "id": string  // 新创建文档的块 ID
-}
+Returns: 新创建文档的块 ID（字符串），如 "20210914223645-oj2vnx2"
 
 示例：
 - 在"工作"笔记本创建会议记录：path="/会议记录/2024-01-15"
@@ -47,9 +44,9 @@ Returns JSON:
         },
     }, async ({ notebook, path, markdown }) => {
         try {
-            const data = await siyuanPost("/api/filetree/createDocWithMd", { notebook, path, markdown });
+            const docId = await siyuanPost("/api/filetree/createDocWithMd", { notebook, path, markdown });
             return {
-                content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+                content: [{ type: "text", text: JSON.stringify({ id: docId }, null, 2) }],
             };
         }
         catch (error) {
@@ -181,36 +178,30 @@ Returns: 操作成功则返回成功消息；若检测到子文档且未传 forc
     // ─── 移动文档 ────────────────────────────────────────────────────
     server.registerTool("siyuan_move_doc", {
         title: "Move SiYuan Document",
-        description: `将一篇文档移动到目标笔记本下的指定目录（以目标文档 ID 为父节点）。
+        description: `将一篇或多篇文档移动到目标位置（以目标文档 ID 或笔记本 ID 为父节点）。
 
 Args:
-  - fromNotebook (string): 源笔记本 ID
-  - toNotebook (string): 目标笔记本 ID（可以与源相同，表示在同一笔记本内移动）
   - fromIDs (array): 要移动的文档 ID 列表（1-50 个 ID）
-  - toPath (string): 目标路径，以 "/" 开头，如 "/归档/2024"。
-    使用 "/" 表示移动到笔记本根目录
+  - toID (string): 目标父文档 ID 或笔记本 ID。
+    传入文档 ID 时，文档将移动到该文档下成为其子文档；
+    传入笔记本 ID 时，文档将移动到该笔记本的根目录。
 
-Returns: 操作成功则返回成功消息`,
+Returns: 操作成功则返回成功消息
+
+示例：
+- 将文档移到另一篇文档下：fromIDs=["docID1"], toID="parentDocID"
+- 将文档移到笔记本根目录：fromIDs=["docID1"], toID="notebookID"`,
         inputSchema: z
             .object({
-            fromNotebook: z
-                .string()
-                .min(1, "源笔记本 ID 不能为空")
-                .describe("源笔记本 ID"),
-            toNotebook: z
-                .string()
-                .min(1, "目标笔记本 ID 不能为空")
-                .describe("目标笔记本 ID"),
             fromIDs: z
                 .array(z.string().min(1))
                 .min(1, "至少需要一个文档 ID")
                 .max(50, "最多支持 50 个文档 ID")
                 .describe("要移动的文档 ID 列表"),
-            toPath: z
+            toID: z
                 .string()
-                .min(1, "目标路径不能为空")
-                .startsWith("/", '路径必须以 "/" 开头')
-                .describe('目标路径，如 "/归档/2024"'),
+                .min(1, "目标 ID 不能为空")
+                .describe("目标父文档 ID 或笔记本 ID"),
         })
             .strict(),
         annotations: {
@@ -219,19 +210,17 @@ Returns: 操作成功则返回成功消息`,
             idempotentHint: true,
             openWorldHint: false,
         },
-    }, async ({ fromNotebook, toNotebook, fromIDs, toPath }) => {
+    }, async ({ fromIDs, toID }) => {
         try {
             await siyuanPost("/api/filetree/moveDocsByID", {
-                fromNotebook,
-                toNotebook,
                 fromIDs,
-                toPath,
+                toID,
             });
             return {
                 content: [
                     {
                         type: "text",
-                        text: `${fromIDs.length} document(s) moved to ${toNotebook}:${toPath} successfully.`,
+                        text: `${fromIDs.length} document(s) moved to ${toID} successfully.`,
                     },
                 ],
             };

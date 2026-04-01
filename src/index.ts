@@ -24,6 +24,8 @@ import { registerBlockTools } from "./tools/blocks.js";
 import { registerAttrTools } from "./tools/attrs.js";
 import { registerQueryTools } from "./tools/query.js";
 import { registerSystemTools } from "./tools/system.js";
+import { getSiyuanStartupWarnings } from "./services/siyuan.js";
+import { SIYUAN_BASE_URL } from "./constants.js";
 
 // 验证必要的环境变量
 if (!process.env.SIYUAN_TOKEN) {
@@ -51,6 +53,10 @@ registerSystemTools(server);
 
 // 启动 stdio 传输（适用于本地 Claude Code 集成）
 async function main(): Promise<void> {
+  for (const warning of getSiyuanStartupWarnings(SIYUAN_BASE_URL)) {
+    console.error(warning);
+  }
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error(
