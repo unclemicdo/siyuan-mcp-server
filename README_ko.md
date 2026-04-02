@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README_zh-CN.md) | [繁體中文](./README_zh-TW.md) | [Español](./README_es.md) | [한국어](./README_ko.md)
 
-`siyuan-mcp-server`는 MCP를 지원하는 AI 클라이언트가 SiYuan 노트에 직접 접근할 수 있게 해 주는 로컬 `stdio` MCP 서버입니다. 설정을 마치면 Claude Code, Cursor, Codex CLI 같은 도구에 연결해서 에이전트가 노트를 읽고, 찾고, 재구성하고, 수정하게 할 수 있습니다. 즉, SiYuan을 단순 저장소가 아니라 에이전트가 실제로 작업할 수 있는 개인 지식 베이스로 바꿔 줍니다.
+`siyuan-mcp-server`는 MCP를 지원하는 AI 클라이언트가 SiYuan 노트에 직접 접근할 수 있게 해 주는 로컬 `stdio` MCP 서버입니다. 이 저장소에는 로컬 스킬을 지원하는 에이전트를 위한 선택형 companion skill도 함께 포함되어 있습니다. 설정을 마치면 Claude Code, Cursor, Codex CLI 같은 도구에 연결해서 에이전트가 노트를 읽고, 찾고, 재구성하고, 수정하게 할 수 있습니다. 즉, SiYuan을 단순 저장소가 아니라 에이전트가 실제로 작업할 수 있는 개인 지식 베이스로 바꿔 줍니다.
 
 ## 무엇에 도움이 되나
 
@@ -162,6 +162,27 @@ npm test
 ```bash
 SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 ```
+
+### 선택형 companion skill
+
+이 저장소에는 `skills/siyuan-mcp-skill/` 경로에 선택형 companion skill도 함께 들어 있습니다.
+
+이 skill은 새로운 MCP 도구를 추가하지 않습니다. 대신 기존 SiYuan 도구를 검색, 추적, 요약, 안전한 쓰기 작업에 더 안정적으로 사용하도록 에이전트를 안내합니다.
+
+사용 중인 에이전트가 로컬 skill을 지원한다면 skill 디렉터리로 복사해서 설치할 수 있습니다. Codex 스타일 환경에서는 다음과 같습니다.
+
+```bash
+mkdir -p ~/.agents/skills
+rm -rf ~/.agents/skills/siyuan-mcp-skill
+cp -R skills/siyuan-mcp-skill ~/.agents/skills/
+```
+
+설치 후 skill 명시 호출을 지원하는 환경에서는 다음처럼 사용할 수 있습니다.
+
+- Codex 스타일: `$siyuan-mcp-skill`
+- Claude Code 스타일: `/siyuan-mcp-skill`
+
+여러 노트에서 정보를 찾고, 타임라인을 추적하고, 기존 문서를 이어 쓰고, 이 MCP에서 더 안전하게 쓰기 결정을 내리고 싶을 때 사용하세요.
 
 ## 기능
 

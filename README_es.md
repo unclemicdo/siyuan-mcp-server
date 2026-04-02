@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README_zh-CN.md) | [繁體中文](./README_zh-TW.md) | [Español](./README_es.md) | [한국어](./README_ko.md)
 
-`siyuan-mcp-server` es un servidor MCP local por `stdio` que permite a clientes de IA compatibles con MCP acceder directamente a tus notas de SiYuan. Una vez configurado, puedes conectarlo a herramientas como Claude Code, Cursor o Codex CLI y dejar que el agente lea, recupere, reorganice y actualice tus notas, convirtiendo SiYuan de un lugar donde solo guardas información en una base de conocimiento personal con la que el agente puede trabajar activamente.
+`siyuan-mcp-server` es un servidor MCP local por `stdio` que permite a clientes de IA compatibles con MCP acceder directamente a tus notas de SiYuan. Este repositorio también incluye una skill complementaria opcional para agentes que admiten skills locales. Una vez configurado, puedes conectarlo a herramientas como Claude Code, Cursor o Codex CLI y dejar que el agente lea, recupere, reorganice y actualice tus notas, convirtiendo SiYuan de un lugar donde solo guardas información en una base de conocimiento personal con la que el agente puede trabajar activamente.
 
 ## Para qué sirve
 
@@ -162,6 +162,27 @@ Para comprobaciones interactivas del protocolo:
 ```bash
 SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 ```
+
+### Skill complementaria opcional
+
+Este repositorio también incluye una skill complementaria opcional en `skills/siyuan-mcp-skill/`.
+
+La skill no añade nuevas herramientas MCP. Enseña al agente a usar las herramientas existentes de SiYuan de forma más fiable para búsquedas, trazabilidad, síntesis y escrituras seguras.
+
+Si tu agente admite skills locales, instálala copiando el directorio a tu carpeta de skills. Para entornos de estilo Codex:
+
+```bash
+mkdir -p ~/.agents/skills
+rm -rf ~/.agents/skills/siyuan-mcp-skill
+cp -R skills/siyuan-mcp-skill ~/.agents/skills/
+```
+
+Después de instalarla, puedes invocarla explícitamente en entornos que admiten invocación de skills:
+
+- Estilo Codex: `$siyuan-mcp-skill`
+- Estilo Claude Code: `/siyuan-mcp-skill`
+
+Úsala cuando quieras que el agente busque entre muchas notas, reconstruya líneas de tiempo, continúe un documento existente o tome decisiones de escritura más seguras con este MCP.
 
 ## Funciones
 

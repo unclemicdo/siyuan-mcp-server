@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README_zh-CN.md) | [繁體中文](./README_zh-TW.md) | [Español](./README_es.md) | [한국어](./README_ko.md)
 
-`siyuan-mcp-server` 是一個本地 `stdio` MCP Server，讓支援 MCP 的 AI 用戶端可以直接存取你的思源筆記。完成設定後，你可以把它接到 Claude Code、Cursor、Codex CLI 等用戶端，讓 AI 直接幫你讀取、檢索、整理與修改思源內容，把筆記從「存放資訊的地方」變成「可以直接協作的個人知識庫」。
+`siyuan-mcp-server` 是一個本地 `stdio` MCP Server，讓支援 MCP 的 AI 用戶端可以直接存取你的思源筆記。本倉庫也附帶一個可選的 companion Skill，適用於支援本地 Skill 的 Agent。完成設定後，你可以把它接到 Claude Code、Cursor、Codex CLI 等用戶端，讓 AI 直接幫你讀取、檢索、整理與修改思源內容，把筆記從「存放資訊的地方」變成「可以直接協作的個人知識庫」。
 
 ## 它能幫你做什麼
 
@@ -162,6 +162,27 @@ npm test
 ```bash
 SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 ```
+
+### 可選 companion Skill
+
+本專案也附帶了一個可選的 companion Skill，路徑在 `skills/siyuan-mcp-skill/`。
+
+這個 Skill 不會新增 MCP 工具，而是讓 Agent 更穩定地使用現有的思源工具來做檢索、追溯、彙總與安全寫入。
+
+如果你的 Agent 支援本地 Skill，可以把它複製到 Skill 目錄中。對 Codex 風格環境，安裝方式如下：
+
+```bash
+mkdir -p ~/.agents/skills
+rm -rf ~/.agents/skills/siyuan-mcp-skill
+cp -R skills/siyuan-mcp-skill ~/.agents/skills/
+```
+
+安裝後，在支援顯式呼叫 Skill 的環境中，你可以這樣觸發：
+
+- Codex 風格：`$siyuan-mcp-skill`
+- Claude Code 風格：`/siyuan-mcp-skill`
+
+適合的場景包括：跨多篇筆記檢索資訊、依時間線追溯主題、根據現有文件續寫，以及在這個 MCP 上做更穩妥的寫操作。
 
 ## 功能介紹
 
