@@ -163,6 +163,27 @@ npm test
 SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
+### 可选 companion Skill
+
+本仓库还附带了一个可选的 companion Skill，路径在 `skills/siyuan-mcp-skill/`。
+
+这个 Skill 不会新增 MCP 工具，而是让 Agent 更稳定地使用现有的思源工具来做检索、追溯、汇总和安全写入。
+
+如果你的 Agent 支持本地 Skill，可以把它复制到 Skill 目录里。对 Codex 风格环境，安装方式如下：
+
+```bash
+mkdir -p ~/.agents/skills
+rm -rf ~/.agents/skills/siyuan-mcp-skill
+cp -R skills/siyuan-mcp-skill ~/.agents/skills/
+```
+
+安装后，在支持显式调用 Skill 的环境里，你可以这样触发：
+
+- Codex 风格：`$siyuan-mcp-skill`
+- Claude Code 风格：`/siyuan-mcp-skill`
+
+适合的场景包括：跨多篇笔记检索信息、按时间线追溯主题、基于现有文档续写，以及在这个 MCP 上做更稳妥的写操作。
+
 ## 功能介绍
 
 当前共提供 22 个工具，主要分成下面几类：

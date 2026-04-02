@@ -163,6 +163,27 @@ For interactive protocol checks:
 SIYUAN_TOKEN=your_token npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
+### Optional companion skill
+
+This repository also ships an optional companion skill at `skills/siyuan-mcp-skill/`.
+
+The skill does not add new MCP tools. It teaches agents how to use the existing SiYuan tools more reliably for retrieval, tracing, synthesis, and safe writes.
+
+If your agent supports local skills, install it by copying the directory into your skill home. For Codex-style environments:
+
+```bash
+mkdir -p ~/.agents/skills
+rm -rf ~/.agents/skills/siyuan-mcp-skill
+cp -R skills/siyuan-mcp-skill ~/.agents/skills/
+```
+
+After installation, you can invoke it explicitly in environments that support skill invocation:
+
+- Codex-style: `$siyuan-mcp-skill`
+- Claude Code style: `/siyuan-mcp-skill`
+
+Use it when you want the agent to search across notes, trace timelines, continue an existing document, or make safer write decisions with this MCP.
+
 ## Features
 
 The server currently exposes 22 tools across these groups:
