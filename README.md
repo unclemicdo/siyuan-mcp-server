@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README_zh-CN.md) | [繁體中文](./README_zh-TW.md) | [Español](./README_es.md) | [한국어](./README_ko.md)
 
-`siyuan-mcp-server` is a local `stdio` MCP server that gives MCP-capable AI clients direct access to your SiYuan notes. Once configured, you can connect it to tools such as Claude Code, Cursor, or Codex CLI and let the agent read, retrieve, reorganize, and update your notes, turning SiYuan from a place where information is stored into a personal knowledge base the agent can actively work with.
+`siyuan-mcp-server` is a local `stdio` MCP server that gives MCP-capable AI clients direct access to your SiYuan notes. This repository also ships an optional companion skill for agents that support local skills. Once configured, you can connect it to tools such as Claude Code, Cursor, or Codex CLI and let the agent read, retrieve, reorganize, and update your notes, turning SiYuan from a place where information is stored into a personal knowledge base the agent can actively work with.
 
 ## What it helps with
 

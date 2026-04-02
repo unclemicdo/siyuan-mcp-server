@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README_zh-CN.md) | [繁體中文](./README_zh-TW.md) | [Español](./README_es.md) | [한국어](./README_ko.md)
 
-`siyuan-mcp-server` 是一个本地 `stdio` MCP Server，让支持 MCP 的 AI 客户端可以直接访问你的思源笔记。配置完成后，你可以把它接到 Claude Code、Cursor、Codex CLI 等客户端，让 AI 直接帮你读取、检索、整理和修改思源内容，把笔记从“存放信息的地方”变成“可以直接协作的个人知识库”。
+`siyuan-mcp-server` 是一个本地 `stdio` MCP Server，让支持 MCP 的 AI 客户端可以直接访问你的思源笔记。本仓库还附带了一个可选的 companion Skill，适用于支持本地 Skill 的 Agent。配置完成后，你可以把它接到 Claude Code、Cursor、Codex CLI 等客户端，让 AI 直接帮你读取、检索、整理和修改思源内容，把笔记从“存放信息的地方”变成“可以直接协作的个人知识库”。
 
 ## 它能帮你做什么
 
