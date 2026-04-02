@@ -1,6 +1,6 @@
 {
   "name": "siyuan-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for SiYuan Note (思源笔记) API integration",
   "license": "MIT",
   "author": "Uncle Mic",

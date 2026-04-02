@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.1 - 2026-04-02
+
 ### Changed
 
 - rewrote the Chinese and English README files around value proposition, scope, and safety boundaries
@@ -10,3 +12,5 @@
 - enforced read-only SQL by rejecting non-`SELECT`, unsafe keywords, and multi-statement payloads before sending queries to SiYuan
 - added automated tests for endpoint-risk warnings and SQL safety rules
 - added CI, security policy, and local verification guidance
+- added a repository-shipped companion skill for safer SiYuan MCP usage
+- documented companion skill installation and invocation across all shipped README variants

@@ -40,7 +40,7 @@ if (!process.env.SIYUAN_TOKEN) {
 // 创建 MCP Server 实例
 const server = new McpServer({
   name: "siyuan-mcp-server",
-  version: "1.0.0",
+  version: "1.0.1",
 });
 
 // 注册所有工具
