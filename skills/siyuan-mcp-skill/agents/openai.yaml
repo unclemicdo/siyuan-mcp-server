@@ -1,0 +1,4 @@
+interface:
+  display_name: "SiYuan MCP"
+  short_description: "Guide agents using SiYuan MCP safely"
+  default_prompt: "Use $siyuan-mcp-skill to search my SiYuan notes, trace decisions across documents, and update content safely."
